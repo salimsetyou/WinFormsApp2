@@ -51,13 +51,30 @@ namespace WinFormsApp2.Models
                     {
                         try
                         {
-                            // Disable foreign key check sementara
-                            using (NpgsqlCommand disableFk = new NpgsqlCommand("SET CONSTRAINTS ALL DEFERRED", conn, transaction))
+                            // Pastikan ID baru belum ada
+                            string checkNew = "SELECT COUNT(*) FROM tanaman WHERE id_tanaman = @id_new";
+                            using (var cmdCheck = new NpgsqlCommand(checkNew, conn, transaction))
                             {
-                                disableFk.ExecuteNonQuery();
+                                cmdCheck.Parameters.AddWithValue("@id_new", IdTanaman);
+                                var exists = Convert.ToInt64(cmdCheck.ExecuteScalar());
+                                if (exists > 0)
+                                    throw new Exception("ID tanaman baru sudah digunakan. Pilih ID lain.");
                             }
 
-                            // Step 1: Update tabel monitoring DULU (child yang referensi tanaman)
+                            // 1) Masukkan record tanaman baru dengan ID baru (salin data)
+                            string insertTanaman = "INSERT INTO tanaman (id_tanaman, nama_tanaman, varietas, umur_tanaman, tanggal_tanam, jenis_komoditas) VALUES (@id_new, @nama, @varietas, @umur, @tanggal, @komoditas)";
+                            using (var cmdInsert = new NpgsqlCommand(insertTanaman, conn, transaction))
+                            {
+                                cmdInsert.Parameters.AddWithValue("@id_new", IdTanaman);
+                                cmdInsert.Parameters.AddWithValue("@nama", NamaTanaman);
+                                cmdInsert.Parameters.AddWithValue("@varietas", Varietas);
+                                cmdInsert.Parameters.AddWithValue("@umur", UmurTanaman);
+                                cmdInsert.Parameters.AddWithValue("@tanggal", (object)TanggalTanam ?? DBNull.Value);
+                                cmdInsert.Parameters.AddWithValue("@komoditas", JenisKomoditas);
+                                cmdInsert.ExecuteNonQuery();
+                            }
+
+                            // 2) Update tabel monitoring untuk merujuk ke ID baru
                             string queryMonitoring = "UPDATE monitoring SET id_tanaman = @id_new WHERE id_tanaman = @id_old";
                             using (NpgsqlCommand cmdMonitoring = new NpgsqlCommand(queryMonitoring, conn, transaction))
                             {
@@ -66,18 +83,12 @@ namespace WinFormsApp2.Models
                                 cmdMonitoring.ExecuteNonQuery();
                             }
 
-                            // Step 2: Baru update tabel tanaman setelah child table sudah ter-update
-                            string query = "UPDATE tanaman SET id_tanaman = @id_new, nama_tanaman = @nama, varietas = @varietas, umur_tanaman = @umur, tanggal_tanam = @tanggal, jenis_komoditas = @komoditas WHERE id_tanaman = @id_old";
-                            using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn, transaction))
+                            // 3) Hapus record tanaman lama
+                            string deleteOld = "DELETE FROM tanaman WHERE id_tanaman = @id_old";
+                            using (var cmdDelete = new NpgsqlCommand(deleteOld, conn, transaction))
                             {
-                                cmd.Parameters.AddWithValue("@id_new", IdTanaman);
-                                cmd.Parameters.AddWithValue("@id_old", IdTanamanLama);
-                                cmd.Parameters.AddWithValue("@nama", NamaTanaman);
-                                cmd.Parameters.AddWithValue("@varietas", Varietas);
-                                cmd.Parameters.AddWithValue("@umur", UmurTanaman);
-                                cmd.Parameters.AddWithValue("@tanggal", (object)TanggalTanam ?? DBNull.Value);
-                                cmd.Parameters.AddWithValue("@komoditas", JenisKomoditas);
-                                cmd.ExecuteNonQuery();
+                                cmdDelete.Parameters.AddWithValue("@id_old", IdTanamanLama);
+                                cmdDelete.ExecuteNonQuery();
                             }
 
                             transaction.Commit();
