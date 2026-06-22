@@ -54,7 +54,7 @@
             panel1.Location = new Point(39, 28);
             panel1.Name = "panel1";
             panel1.Size = new Size(462, 100);
-            panel1.TabIndex = 1;
+            panel1.TabIndex = 0;
             panel1.Paint += panel1_Paint;
             // 
             // label1
@@ -101,8 +101,8 @@
             dateTimePicker1.Margin = new Padding(2, 2, 2, 2);
             dateTimePicker1.Name = "dateTimePicker1";
             dateTimePicker1.Size = new Size(248, 27);
-            dateTimePicker1.TabIndex = 3;
-            dateTimePicker1.Enabled = false;
+            dateTimePicker1.TabIndex = 2;
+            dateTimePicker1.Enabled = true;
             // 
             // textBox3
             // 
@@ -110,8 +110,8 @@
             textBox3.Name = "textBox3";
             textBox3.PlaceholderText = "Cari nama tanaman...";
             textBox3.Size = new Size(125, 27);
-            textBox3.TabIndex = 2;
-            textBox3.Enabled = false;
+            textBox3.TabIndex = 1;
+            textBox3.Enabled = true;
             // 
             // dataGridView1
             // 
@@ -120,7 +120,7 @@
             dataGridView1.Name = "dataGridView1";
             dataGridView1.RowHeadersWidth = 51;
             dataGridView1.Size = new Size(720, 201);
-            dataGridView1.TabIndex = 2;
+            dataGridView1.TabIndex = 4;
             dataGridView1.CellContentClick += dataGridView1_CellContentClick;
             // 
             // btnRefresh
@@ -128,7 +128,7 @@
             btnRefresh.Location = new Point(270, 140);
             btnRefresh.Name = "btnRefresh";
             btnRefresh.Size = new Size(103, 30);
-            btnRefresh.TabIndex = 1;
+            btnRefresh.TabIndex = 3;
             btnRefresh.Text = "Reset / Refresh";
             btnRefresh.Click += btnRefresh_Click;
             // 
@@ -137,7 +137,7 @@
             button1.Location = new Point(39, 140);
             button1.Name = "button1";
             button1.Size = new Size(225, 30);
-            button1.TabIndex = 3;
+            button1.TabIndex = 2;
             button1.Text = "Cari (Search)";
             button1.UseVisualStyleBackColor = true;
             button1.Click += button1_Click;

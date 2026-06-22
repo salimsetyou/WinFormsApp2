@@ -353,24 +353,41 @@ namespace WinFormsApp2.UserController
                 var dt = model.GetAllMonitoring();
                 if (dt == null) dt = new DataTable();
 
-                DataView dv = new DataView(dt);
-                string filter = "";
+                DataTable dtFiltered = dt.Clone();
 
-                if (!string.IsNullOrWhiteSpace(namaTanaman))
+                foreach (DataRow row in dt.Rows)
                 {
-                    filter += $"TANAMAN LIKE '%" + namaTanaman.Replace("'", "''") + "%'";
+                    bool matches = true;
+
+                    if (!string.IsNullOrWhiteSpace(namaTanaman))
+                    {
+                        var tanaman = row["TANAMAN"]?.ToString() ?? "";
+                        if (!tanaman.Contains(namaTanaman, StringComparison.OrdinalIgnoreCase))
+                        {
+                            matches = false;
+                        }
+                    }
+
+                    if (matches && tanggal.HasValue)
+                    {
+                        if (row["TANGGAL"] is DateTime rowDate)
+                        {
+                            DateTime filterDate = tanggal.Value.Date;
+                            DateTime rowDateOnly = rowDate.Date;
+                            if (rowDateOnly != filterDate)
+                            {
+                                matches = false;
+                            }
+                        }
+                    }
+
+                    if (matches)
+                    {
+                        dtFiltered.ImportRow(row);
+                    }
                 }
 
-                if (tanggal.HasValue)
-                {
-                    if (!string.IsNullOrEmpty(filter)) filter += " AND ";
-                    filter += $"CONVERT(varchar, TANGGAL, 23) = '" + tanggal.Value.ToString("yyyy-MM-dd") + "'";
-                }
-
-                if (!string.IsNullOrEmpty(filter))
-                    dv.RowFilter = filter;
-
-                viewRiwayat.dataGridView1.DataSource = dv;
+                viewRiwayat.dataGridView1.DataSource = dtFiltered;
             }
             catch (Exception ex)
             {
