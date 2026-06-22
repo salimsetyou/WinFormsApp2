@@ -51,27 +51,75 @@ namespace MonitoringKopiKakao.Model
           
         public void UpdatePetugas()
         {
-            // Jika ID berubah, perlu update 3 tabel yang saling referensi
+            // Jika ID berubah, lakukan perpindahan entitas dengan aman
             if (IdUserLama > 0 && IdUserLama != IdUser)
             {
-                // PENTING: Urutan update untuk cascade update
-                // 1. Update tabel monitoring (child yang referensi users)
-                // 2. Update tabel petugas_monitoring (child yang referensi users)
-                // 3. Update tabel users (parent)
-
                 using (NpgsqlConnection conn = db.GetConnection())
                 {
                     using (NpgsqlTransaction transaction = conn.BeginTransaction())
                     {
                         try
                         {
-                            // Disable foreign key check sementara untuk semua
-                            using (NpgsqlCommand disableFk = new NpgsqlCommand("SET CONSTRAINTS ALL DEFERRED", conn, transaction))
+                            // Pastikan ID baru belum dipakai
+                            string checkNewId = "SELECT COUNT(*) FROM users WHERE id_user = @id_new";
+                            using (var cmdCheck = new NpgsqlCommand(checkNewId, conn, transaction))
                             {
-                                disableFk.ExecuteNonQuery();
+                                cmdCheck.Parameters.AddWithValue("@id_new", IdUser);
+                                var exists = Convert.ToInt64(cmdCheck.ExecuteScalar());
+                                if (exists > 0)
+                                    throw new Exception("ID baru sudah digunakan. Pilih ID lain.");
                             }
 
-                            // Step 1: Update tabel monitoring DULU (child level 1)
+                            // Pastikan username tidak dipakai oleh account lain (kecuali id lama)
+                            string checkUser = "SELECT id_user FROM users WHERE username = @user";
+                            object obj = null;
+                            int? foundId = null;
+                            using (var cmdCheckUser = new NpgsqlCommand(checkUser, conn, transaction))
+                            {
+                                cmdCheckUser.Parameters.AddWithValue("@user", Username ?? string.Empty);
+                                obj = cmdCheckUser.ExecuteScalar();
+                                if (obj != null && obj != DBNull.Value)
+                                {
+                                    foundId = Convert.ToInt32(obj);
+                                    if (foundId != IdUserLama)
+                                        throw new Exception("Username sudah digunakan oleh akun lain.");
+                                }
+                            }
+
+
+                            // 1) Jika username yang akan digunakan saat ini dimiliki oleh akun lama,
+                            //    maka ganti username akun lama sementara untuk menghindari
+                            //    pelanggaran constraint unique saat melakukan insert user baru.
+                            bool usernameBelongsToOld = false;
+                            string tempUsername = null;
+                            if (foundId.HasValue && foundId == IdUserLama)
+                            {
+                                usernameBelongsToOld = true;
+                            }
+
+                            if (usernameBelongsToOld)
+                            {
+                                tempUsername = (Username ?? string.Empty) + "_tmp_" + Guid.NewGuid().ToString("N");
+                                string updateOldUsername = "UPDATE users SET username = @temp WHERE id_user = @id_old";
+                                using (var cmdTemp = new NpgsqlCommand(updateOldUsername, conn, transaction))
+                                {
+                                    cmdTemp.Parameters.AddWithValue("@temp", tempUsername);
+                                    cmdTemp.Parameters.AddWithValue("@id_old", IdUserLama);
+                                    cmdTemp.ExecuteNonQuery();
+                                }
+                            }
+
+                            // 2) Masukkan record users baru dengan ID baru (nama pengguna asli)
+                            string insertUser = "INSERT INTO users (id_user, username, password) VALUES (@id_new, @user, @pass)";
+                            using (var cmdInsert = new NpgsqlCommand(insertUser, conn, transaction))
+                            {
+                                cmdInsert.Parameters.AddWithValue("@id_new", IdUser);
+                                cmdInsert.Parameters.AddWithValue("@user", Username ?? string.Empty);
+                                cmdInsert.Parameters.AddWithValue("@pass", Password ?? string.Empty);
+                                cmdInsert.ExecuteNonQuery();
+                            }
+
+                            // 2) Pindahkan referensi di tabel monitoring ke ID baru
                             string queryMonitoring = "UPDATE monitoring SET id_user = @id_new WHERE id_user = @id_old";
                             using (NpgsqlCommand cmdMonitoring = new NpgsqlCommand(queryMonitoring, conn, transaction))
                             {
@@ -80,7 +128,7 @@ namespace MonitoringKopiKakao.Model
                                 cmdMonitoring.ExecuteNonQuery();
                             }
 
-                            // Step 2: Update tabel petugas_monitoring (child level 1)
+                            // 3) Update petugas_monitoring untuk menggunakan ID baru
                             string queryPetugas = "UPDATE petugas_monitoring SET id_user = @id_new WHERE id_user = @id_old";
                             using (NpgsqlCommand cmdPetugas = new NpgsqlCommand(queryPetugas, conn, transaction))
                             {
@@ -89,23 +137,18 @@ namespace MonitoringKopiKakao.Model
                                 cmdPetugas.ExecuteNonQuery();
                             }
 
-                            // Step 3: Baru update tabel users setelah kedua child table sudah ter-update
-                            string queryUser = "UPDATE users SET id_user = @id_new, username = @user, password = @pass WHERE id_user = @id_old";
-                            using (NpgsqlCommand cmdUser = new NpgsqlCommand(queryUser, conn, transaction))
+                            // 4) Hapus record users lama
+                            string deleteOldUser = "DELETE FROM users WHERE id_user = @id_old";
+                            using (var cmdDelete = new NpgsqlCommand(deleteOldUser, conn, transaction))
                             {
-                                cmdUser.Parameters.AddWithValue("@id_new", IdUser);
-                                cmdUser.Parameters.AddWithValue("@id_old", IdUserLama);
-                                cmdUser.Parameters.AddWithValue("@user", Username);
-                                cmdUser.Parameters.AddWithValue("@pass", Password);
-                                cmdUser.ExecuteNonQuery();
+                                cmdDelete.Parameters.AddWithValue("@id_old", IdUserLama);
+                                cmdDelete.ExecuteNonQuery();
                             }
 
-                            // Commit transaction jika semua berhasil
                             transaction.Commit();
                         }
                         catch (Exception ex)
                         {
-                            // Rollback jika ada error
                             transaction.Rollback();
                             throw new Exception("Gagal mengubah ID petugas: " + ex.Message);
                         }
@@ -123,14 +166,14 @@ namespace MonitoringKopiKakao.Model
                     using (NpgsqlCommand cmdUser = new NpgsqlCommand(queryUser, conn))
                     {
                         cmdUser.Parameters.AddWithValue("@id", IdUser);
-                        cmdUser.Parameters.AddWithValue("@user", Username);
-                        cmdUser.Parameters.AddWithValue("@pass", Password);
+                        cmdUser.Parameters.AddWithValue("@user", Username ?? string.Empty);
+                        cmdUser.Parameters.AddWithValue("@pass", Password ?? string.Empty);
                         cmdUser.ExecuteNonQuery();
                     }
                     using (NpgsqlCommand cmdPetugas = new NpgsqlCommand(queryPetugas, conn))
                     {
                         cmdPetugas.Parameters.AddWithValue("@id", IdUser);
-                        cmdPetugas.Parameters.AddWithValue("@nama", NamaPetugas);
+                        cmdPetugas.Parameters.AddWithValue("@nama", NamaPetugas ?? string.Empty);
                         cmdPetugas.ExecuteNonQuery();
                     }
                 }

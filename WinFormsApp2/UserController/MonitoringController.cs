@@ -253,12 +253,23 @@ namespace WinFormsApp2.UserController
             try
             {
                 if (viewInput.dataGridView1.CurrentRow == null) return;
-
                 var val = viewInput.dataGridView1.CurrentRow.Cells["ID"].Value;
                 if (val == null) return;
-                int id = Convert.ToInt32(val);
+                int originalId = Convert.ToInt32(val);
 
-                model.IdMonitoring = id;
+                // If the user changed the ID in the textBox1, read that as the new ID.
+                int newId = originalId;
+                if (!string.IsNullOrWhiteSpace(viewInput.textBox1?.Text))
+                {
+                    if (!int.TryParse(viewInput.textBox1.Text.Trim(), out newId) || newId <= 0)
+                    {
+                        MessageBox.Show("ID Monitoring harus berupa angka positif!", "Validasi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                }
+
+                model.IdMonitoringLama = originalId; // allow model to detect primary-key change
+                model.IdMonitoring = newId;
                 model.Tanggal = viewInput.dateTimePicker1?.Value ?? DateTime.Now;
 
                 model.IdTanaman = 0;
@@ -359,6 +370,7 @@ namespace WinFormsApp2.UserController
                 {
                     bool matches = true;
 
+                    // Filter by tanaman if provided
                     if (!string.IsNullOrWhiteSpace(namaTanaman))
                     {
                         var tanaman = row["TANAMAN"]?.ToString() ?? "";
@@ -368,15 +380,44 @@ namespace WinFormsApp2.UserController
                         }
                     }
 
+                    // Filter by tanggal if provided. Support DateTime, DateOnly or string values.
                     if (matches && tanggal.HasValue)
                     {
-                        if (row["TANGGAL"] is DateTime rowDate)
+                        var val = row["TANGGAL"];
+                        if (val == null || val == DBNull.Value)
                         {
-                            DateTime filterDate = tanggal.Value.Date;
-                            DateTime rowDateOnly = rowDate.Date;
-                            if (rowDateOnly != filterDate)
+                            matches = false;
+                        }
+                        else
+                        {
+                            DateOnly rowDateOnly;
+                            if (val is DateTime dtv)
                             {
-                                matches = false;
+                                rowDateOnly = DateOnly.FromDateTime(dtv);
+                            }
+                            else if (val is DateOnly dd)
+                            {
+                                rowDateOnly = dd;
+                            }
+                            else
+                            {
+                                // try parse fallback
+                                if (DateTime.TryParse(val.ToString(), out var parsed))
+                                {
+                                    rowDateOnly = DateOnly.FromDateTime(parsed);
+                                }
+                                else
+                                {
+                                    matches = false;
+                                    rowDateOnly = default;
+                                }
+                            }
+
+                            if (matches)
+                            {
+                                var filterDate = DateOnly.FromDateTime(tanggal.Value.Date);
+                                if (!rowDateOnly.Equals(filterDate))
+                                    matches = false;
                             }
                         }
                     }

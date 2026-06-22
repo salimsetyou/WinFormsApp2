@@ -8,6 +8,7 @@ namespace WinFormsApp2.Models
     public class MonitoringModel
     {
         public int IdMonitoring { get; set; }
+        public int IdMonitoringLama { get; set; }
         public DateTime Tanggal { get; set; }
         public int IdTanaman { get; set; }
         public string Kondisi { get; set; } = string.Empty;
@@ -45,19 +46,66 @@ namespace WinFormsApp2.Models
 
         public void UpdateMonitoring()
         {
-            // UPDATE dengan kolom catatan dan hama
-            string query = "UPDATE monitoring SET tanggal = @tanggal, id_tanaman = @id_tanaman, kondisi_tanaman = @kondisi, hama = @hama, cuaca = @cuaca, catatan = @catatan, id_user = @id_user WHERE id_monitoring = @id";
-            using (NpgsqlCommand cmd = new NpgsqlCommand(query))
+            // Jika IdMonitoringLama diset dan berbeda, izinkan perubahan primary key secara aman
+            if (IdMonitoringLama > 0 && IdMonitoringLama != IdMonitoring)
             {
-                cmd.Parameters.AddWithValue("@id", IdMonitoring);
-                cmd.Parameters.AddWithValue("@tanggal", Tanggal);
-                cmd.Parameters.AddWithValue("@id_tanaman", IdTanaman);
-                cmd.Parameters.AddWithValue("@kondisi", Kondisi ?? string.Empty);
-                cmd.Parameters.AddWithValue("@hama", Hama ?? string.Empty);
-                cmd.Parameters.AddWithValue("@cuaca", Cuaca ?? string.Empty);
-                cmd.Parameters.AddWithValue("@catatan", Catatan ?? string.Empty);
-                cmd.Parameters.AddWithValue("@id_user", IdUser);
-                db.ExecuteNonQuery(cmd);
+                using (NpgsqlConnection conn = db.GetConnection())
+                {
+                    using (var transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Pastikan ID baru belum dipakai
+                            string check = "SELECT COUNT(*) FROM monitoring WHERE id_monitoring = @newid";
+                            using (var cmdCheck = new NpgsqlCommand(check, conn, transaction))
+                            {
+                                cmdCheck.Parameters.AddWithValue("@newid", IdMonitoring);
+                                var exists = Convert.ToInt64(cmdCheck.ExecuteScalar());
+                                if (exists > 0)
+                                    throw new Exception("ID monitoring baru sudah digunakan. Pilih ID lain.");
+                            }
+
+                            string query = "UPDATE monitoring SET id_monitoring = @newid, tanggal = @tanggal, id_tanaman = @id_tanaman, kondisi_tanaman = @kondisi, hama = @hama, cuaca = @cuaca, catatan = @catatan, id_user = @id_user WHERE id_monitoring = @oldid";
+                            using (var cmd = new NpgsqlCommand(query, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@newid", IdMonitoring);
+                                cmd.Parameters.AddWithValue("@oldid", IdMonitoringLama);
+                                cmd.Parameters.AddWithValue("@tanggal", Tanggal);
+                                cmd.Parameters.AddWithValue("@id_tanaman", IdTanaman);
+                                cmd.Parameters.AddWithValue("@kondisi", Kondisi ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@hama", Hama ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@cuaca", Cuaca ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@catatan", Catatan ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@id_user", IdUser);
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            transaction.Commit();
+                        }
+                        catch
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Update tanpa perubahan ID
+                string query = "UPDATE monitoring SET tanggal = @tanggal, id_tanaman = @id_tanaman, kondisi_tanaman = @kondisi, hama = @hama, cuaca = @cuaca, catatan = @catatan, id_user = @id_user WHERE id_monitoring = @id";
+                using (NpgsqlCommand cmd = new NpgsqlCommand(query))
+                {
+                    cmd.Parameters.AddWithValue("@id", IdMonitoring);
+                    cmd.Parameters.AddWithValue("@tanggal", Tanggal);
+                    cmd.Parameters.AddWithValue("@id_tanaman", IdTanaman);
+                    cmd.Parameters.AddWithValue("@kondisi", Kondisi ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@hama", Hama ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@cuaca", Cuaca ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@catatan", Catatan ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@id_user", IdUser);
+                    db.ExecuteNonQuery(cmd);
+                }
             }
         }
 

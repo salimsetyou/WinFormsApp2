@@ -41,7 +41,7 @@ namespace WinFormsApp2.View
                 DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
 
                 // Populate ID
-                if (row.Cells.Contains(row.Cells["ID"]))
+                if (row.Cells["ID"] != null)
                 {
                     string id = row.Cells["ID"].Value?.ToString() ?? "";
                     if (textBox1 != null)
@@ -57,7 +57,7 @@ namespace WinFormsApp2.View
                 }
 
                 // Populate Kondisi
-                if (row.Cells.Contains(row.Cells["KONDISI"]))
+                if (row.Cells["KONDISI"] != null)
                 {
                     string kondisi = row.Cells["KONDISI"].Value?.ToString() ?? "";
                     if (comboBoxPetugas != null)
@@ -73,11 +73,30 @@ namespace WinFormsApp2.View
                 }
 
                 // Populate Cuaca
-                if (row.Cells.Contains(row.Cells["CUACA"]))
+                if (row.Cells["CUACA"] != null)
                 {
                     string cuaca = row.Cells["CUACA"].Value?.ToString() ?? "";
                     if (comboBox2 != null)
                         comboBox2.Text = cuaca;
+                }
+
+                // Populate Tanggal
+                if (row.Cells["TANGGAL"] != null)
+                {
+                    var val = row.Cells["TANGGAL"].Value;
+                    if (val != null && val != DBNull.Value)
+                    {
+                        if (val is DateTime dt)
+                        {
+                            dateTimePicker1.Value = dt;
+                        }
+                        else
+                        {
+                            DateTime parsed;
+                            if (DateTime.TryParse(val.ToString(), out parsed))
+                                dateTimePicker1.Value = parsed;
+                        }
+                    }
                 }
 
                 btnEdit.Enabled = true;

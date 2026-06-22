@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Linq;
 using System.Windows.Forms;
 using WinFormsApp2.Models;
 using WinFormsApp2.View;
@@ -48,17 +49,38 @@ namespace WinFormsApp2.UserController
                     if (!string.IsNullOrEmpty(filter)) filter += " AND ";
                     filter += $"TANAMAN = '" + jenisTanaman.Replace("'", "''") + "'";
                 }
-                if (tanggal.HasValue)
-                {
-                    if (!string.IsNullOrEmpty(filter)) filter += " AND ";
-
-                    filter += $"CONVERT(varchar, TANGGAL, 23) = '" + tanggal.Value.ToString("yyyy-MM-dd") + "'";
-                }
-
+                // Apply string-based filters first (PETUGAS, TANAMAN)
                 if (!string.IsNullOrEmpty(filter))
                     dv.RowFilter = filter;
 
-                view.dgvLaporan.DataSource = dv;
+                // If tanggal specified, DataColumn type may be DateOnly or DateTime.
+                // DataView.RowFilter cannot compare DateOnly with DateTime using '='.
+                // So apply date filtering in-memory using LINQ over the rows.
+                if (tanggal.HasValue)
+                {
+                    var targetDate = DateOnly.FromDateTime(tanggal.Value);
+                    var tableAfterStringFilter = dv.ToTable();
+                    var filtered = tableAfterStringFilter.AsEnumerable().Where(r =>
+                    {
+                        var val = r["TANGGAL"];
+                        if (val == null || val == DBNull.Value) return false;
+                        if (val is DateOnly d) return d == targetDate;
+                        if (val is DateTime dtv) return DateOnly.FromDateTime(dtv) == targetDate;
+                        // fallback: try parse
+                        if (DateTime.TryParse(val.ToString(), out var parsed))
+                            return DateOnly.FromDateTime(parsed) == targetDate;
+                        return false;
+                    });
+
+                    if (filtered.Any())
+                        view.dgvLaporan.DataSource = filtered.CopyToDataTable();
+                    else
+                        view.dgvLaporan.DataSource = tableAfterStringFilter.Clone(); // empty table with same schema
+                }
+                else
+                {
+                    view.dgvLaporan.DataSource = dv;
+                }
             }
             catch (Exception ex)
             {
@@ -89,7 +111,8 @@ namespace WinFormsApp2.UserController
 
         internal void TampilFilter(string namaPetugas, DateTime? tanggal)
         {
-            throw new NotImplementedException();
+            // Forward to the main overload and pass empty jenisTanaman
+            TampilFilter(namaPetugas, string.Empty, tanggal);
         }
     }
 }
