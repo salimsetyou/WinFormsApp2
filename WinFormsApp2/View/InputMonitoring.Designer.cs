@@ -30,6 +30,7 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(InputMonitoring));
             panel1 = new Panel();
+            textBox2 = new TextBox();
             comboBox2 = new ComboBox();
             comboBox1 = new ComboBox();
             dateTimePicker1 = new DateTimePicker();
@@ -41,7 +42,7 @@
             btnSave = new Button();
             btnEdit = new Button();
             btnReset = new Button();
-            textBox2 = new TextBox();
+            button1 = new Button();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             SuspendLayout();
@@ -60,6 +61,14 @@
             panel1.Name = "panel1";
             panel1.Size = new Size(473, 129);
             panel1.TabIndex = 0;
+            // 
+            // textBox2
+            // 
+            textBox2.Location = new Point(287, 23);
+            textBox2.Name = "textBox2";
+            textBox2.PlaceholderText = "catatan";
+            textBox2.Size = new Size(125, 27);
+            textBox2.TabIndex = 11;
             // 
             // comboBox2
             // 
@@ -82,7 +91,7 @@
             // dateTimePicker1
             // 
             dateTimePicker1.Location = new Point(16, 57);
-            dateTimePicker1.Margin = new Padding(2, 2, 2, 2);
+            dateTimePicker1.Margin = new Padding(2);
             dateTimePicker1.Name = "dateTimePicker1";
             dateTimePicker1.Size = new Size(125, 27);
             dateTimePicker1.TabIndex = 8;
@@ -143,7 +152,7 @@
             // btnEdit
             // 
             btnEdit.Enabled = false;
-            btnEdit.Location = new Point(195, 172);
+            btnEdit.Location = new Point(169, 172);
             btnEdit.Name = "btnEdit";
             btnEdit.Size = new Size(75, 30);
             btnEdit.TabIndex = 1;
@@ -152,20 +161,21 @@
             // 
             // btnReset
             // 
-            btnReset.Location = new Point(309, 172);
+            btnReset.Location = new Point(270, 172);
             btnReset.Name = "btnReset";
             btnReset.Size = new Size(75, 30);
             btnReset.TabIndex = 2;
             btnReset.Text = "Reset";
             btnReset.Click += btnReset_Click;
             // 
-            // textBox2
+            // button1
             // 
-            textBox2.Location = new Point(287, 23);
-            textBox2.Name = "textBox2";
-            textBox2.PlaceholderText = "catatan";
-            textBox2.Size = new Size(125, 27);
-            textBox2.TabIndex = 11;
+            button1.Location = new Point(374, 172);
+            button1.Name = "button1";
+            button1.Size = new Size(94, 29);
+            button1.TabIndex = 3;
+            button1.Text = "hapus";
+            button1.UseVisualStyleBackColor = true;
             // 
             // InputMonitoring
             // 
@@ -174,6 +184,7 @@
             BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(800, 450);
+            Controls.Add(button1);
             Controls.Add(btnSave);
             Controls.Add(btnEdit);
             Controls.Add(btnReset);
@@ -203,5 +214,6 @@
         public ComboBox comboBox1;
         public DateTimePicker dateTimePicker1;
         public TextBox textBox2;
+        private Button button1;
     }
 }
