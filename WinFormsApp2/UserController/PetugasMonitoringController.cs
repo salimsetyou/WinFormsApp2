@@ -58,13 +58,34 @@ namespace MonitoringKopiKakao.Controller
         {
             try
             {
-                if (!int.TryParse(view.TxtIdPetugas.Text.Trim(), out int idPetugas) || idPetugas <= 0)
+                // Validasi semua field terisi
+                if (string.IsNullOrWhiteSpace(view.TxtIdPetugas.Text) ||
+                    string.IsNullOrWhiteSpace(view.TxtUsername.Text) ||
+                    string.IsNullOrWhiteSpace(view.TxtPassword.Text) ||
+                    string.IsNullOrWhiteSpace(view.TxtNamaPetugas.Text))
                 {
-                    MessageBox.Show("ID Petugas tidak valid!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Semua field wajib diisi!", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                model.IdUser = idPetugas;
+                // Validasi ID Petugas baru
+                if (!int.TryParse(view.TxtIdPetugas.Text.Trim(), out int idPetugasBaru) || idPetugasBaru <= 0)
+                {
+                    MessageBox.Show("ID Petugas harus berupa angka positif!", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Ambil ID lama dari row yang dipilih di DataGridView
+                if (view.DataGridPetugas != null && view.DataGridPetugas.CurrentRow != null)
+                {
+                    var idLamaValue = view.DataGridPetugas.CurrentRow.Cells["ID"].Value;
+                    if (idLamaValue != null && int.TryParse(idLamaValue.ToString(), out int idLama))
+                    {
+                        model.IdUserLama = idLama;
+                    }
+                }
+
+                model.IdUser = idPetugasBaru;
                 model.Username = view.TxtUsername.Text;
                 model.Password = view.TxtPassword.Text;
                 model.NamaPetugas = view.TxtNamaPetugas.Text;

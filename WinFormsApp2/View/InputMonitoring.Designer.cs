@@ -176,6 +176,7 @@
             button1.TabIndex = 3;
             button1.Text = "hapus";
             button1.UseVisualStyleBackColor = true;
+            button1.Click += Button1_Click;
             // 
             // InputMonitoring
             // 

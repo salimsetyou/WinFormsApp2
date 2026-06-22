@@ -72,7 +72,34 @@ namespace MonitoringKopiKakao.Controller
         {
             try
             {
-                model.IdLahan = Convert.ToInt32(view.txtIdLahan.Text);
+                // Validasi input kosong
+                if (string.IsNullOrEmpty(view.txtIdLahan.Text) || 
+                    string.IsNullOrEmpty(view.txtNamaLahan.Text) || 
+                    string.IsNullOrEmpty(view.txtLokasi.Text) || 
+                    string.IsNullOrEmpty(view.txtLuas.Text))
+                {
+                    MessageBox.Show("ID Lahan, Nama Lahan, Lokasi, dan Luas wajib diisi!", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Validasi ID Lahan baru
+                if (!int.TryParse(view.txtIdLahan.Text.Trim(), out int idLahanBaru) || idLahanBaru <= 0)
+                {
+                    MessageBox.Show("ID Lahan harus berupa angka positif!", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Ambil ID lama dari row yang sedang dipilih di DataGridView
+                if (view.dgvLahan.CurrentRow != null)
+                {
+                    var idLamaValue = view.dgvLahan.CurrentRow.Cells["ID"].Value;
+                    if (idLamaValue != null && int.TryParse(idLamaValue.ToString(), out int idLamaInt))
+                    {
+                        model.IdLahanLama = idLamaInt;
+                    }
+                }
+
+                model.IdLahan = idLahanBaru;
                 model.NamaLahan = view.txtNamaLahan.Text;
                 model.Lokasi = view.txtLokasi.Text;
                 model.LuasLahan = Convert.ToDouble(view.txtLuas.Text);

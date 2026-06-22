@@ -36,7 +36,7 @@ namespace WinFormsApp2.UserController
                 var dt = model.GetAllMonitoring();
                 if (dt == null) dt = new DataTable();
 
-               
+
                 DataView dv = new DataView(dt);
                 string filter = "";
                 if (!string.IsNullOrWhiteSpace(namaPetugas))
@@ -51,7 +51,7 @@ namespace WinFormsApp2.UserController
                 if (tanggal.HasValue)
                 {
                     if (!string.IsNullOrEmpty(filter)) filter += " AND ";
-                    
+
                     filter += $"CONVERT(varchar, TANGGAL, 23) = '" + tanggal.Value.ToString("yyyy-MM-dd") + "'";
                 }
 
@@ -64,6 +64,32 @@ namespace WinFormsApp2.UserController
             {
                 MessageBox.Show("Gagal memfilter laporan: " + ex.Message);
             }
+        }
+
+        public void HapusFromLaporan()
+        {
+            try
+            {
+                if (view.dgvLaporan.CurrentRow == null) return;
+                var val = view.dgvLaporan.CurrentRow.Cells["ID"].Value;
+                if (val == null) return;
+                int id = Convert.ToInt32(val);
+                if (MessageBox.Show("Hapus monitoring terpilih?", "Konfirmasi", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    model.DeleteMonitoring(id);
+                    MessageBox.Show("Data monitoring berhasil dihapus!");
+                    TampilData();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal menghapus monitoring: " + ex.Message);
+            }
+        }
+
+        internal void TampilFilter(string namaPetugas, DateTime? tanggal)
+        {
+            throw new NotImplementedException();
         }
     }
 }

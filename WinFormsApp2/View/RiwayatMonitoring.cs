@@ -27,21 +27,27 @@ namespace WinFormsApp2.View
         private void RiwayatMonitoring_Load(object sender, EventArgs e)
         {
             controller.TampilDataRiwayat();
+            dateTimePicker1.Value = DateTime.Now;
         }
 
         private void btnRefresh_Click(object sender, EventArgs e)
         {
             controller.TampilDataRiwayat();
+            textBox3.Clear();
+            dateTimePicker1.Value = DateTime.Now;
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-           
+
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
+            string namaTanaman = textBox3?.Text ?? "";
+            DateTime? tanggal = dateTimePicker1?.Value;
 
+            controller.FilterRiwayat(namaTanaman, tanggal);
         }
     }
 }

@@ -83,9 +83,10 @@ namespace WinFormsApp2.UserController
                 if (view.txtIdTanaman == null || view.txtNamaTanaman == null ||
                     view.txtVarietas == null || view.cboKomoditas == null) return;
 
-                if (view.txtIdTanaman.Tag == null || !int.TryParse(view.txtIdTanaman.Tag?.ToString() ?? "0", out int id) || id <= 0)
+                // Validasi input
+                if (!int.TryParse(view.txtIdTanaman.Text.Trim(), out int idBaru) || idBaru <= 0)
                 {
-                    MessageBox.Show("Pilih data tanaman terlebih dahulu dari tabel!", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("ID Tanaman harus berupa angka positif!", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -97,7 +98,17 @@ namespace WinFormsApp2.UserController
                     return;
                 }
 
-                model.IdTanaman = id;
+                // Ambil ID lama dari DataGridView
+                if (view.dgvTanaman != null && view.dgvTanaman.CurrentRow != null)
+                {
+                    var idLamaValue = view.dgvTanaman.CurrentRow.Cells["ID"].Value;
+                    if (idLamaValue != null && int.TryParse(idLamaValue.ToString(), out int idLama))
+                    {
+                        model.IdTanamanLama = idLama;
+                    }
+                }
+
+                model.IdTanaman = idBaru;
                 model.NamaTanaman = view.txtNamaTanaman.Text.Trim();
                 model.Varietas = view.txtVarietas.Text.Trim();
                 model.TanggalTanam = null;

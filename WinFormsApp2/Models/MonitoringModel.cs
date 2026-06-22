@@ -20,20 +20,23 @@ namespace WinFormsApp2.Models
 
         public DataTable GetAllMonitoring()
         {
-            // Query dengan kolom catatan
-            string query = "SELECT m.id_monitoring AS \"ID\", m.tanggal AS \"TANGGAL\", t.nama_tanaman AS \"TANAMAN\", m.kondisi_tanaman AS \"KONDISI\", m.catatan AS \"CATATAN\", p.nama AS \"PETUGAS\" FROM monitoring m JOIN tanaman t ON m.id_tanaman = t.id_tanaman LEFT JOIN petugas_monitoring p ON m.id_user = p.id_user ORDER BY m.tanggal DESC";
+            // Query dengan kolom catatan dan hama
+            string query = "SELECT m.id_monitoring AS \"ID\", m.tanggal AS \"TANGGAL\", t.nama_tanaman AS \"TANAMAN\", m.kondisi_tanaman AS \"KONDISI\", m.hama AS \"HAMA\", m.cuaca AS \"CUACA\", m.catatan AS \"CATATAN\", p.nama AS \"PETUGAS\" FROM monitoring m JOIN tanaman t ON m.id_tanaman = t.id_tanaman LEFT JOIN petugas_monitoring p ON m.id_user = p.id_user ORDER BY m.tanggal DESC";
             return db.ExecuteQuery(query);
         }
 
         public void InsertMonitoring()
         {
-            // INSERT dengan kolom catatan
-            string query = "INSERT INTO monitoring (tanggal, id_tanaman, kondisi_tanaman, catatan, id_user) VALUES (@tanggal, @id_tanaman, @kondisi, @catatan, @id_user)";
+            // INSERT dengan id_monitoring yang custom (tidak auto-increment)
+            string query = "INSERT INTO monitoring (id_monitoring, tanggal, id_tanaman, kondisi_tanaman, hama, cuaca, catatan, id_user) VALUES (@id_monitoring, @tanggal, @id_tanaman, @kondisi, @hama, @cuaca, @catatan, @id_user)";
             using (NpgsqlCommand cmd = new NpgsqlCommand(query))
             {
+                cmd.Parameters.AddWithValue("@id_monitoring", IdMonitoring);
                 cmd.Parameters.AddWithValue("@tanggal", Tanggal);
                 cmd.Parameters.AddWithValue("@id_tanaman", IdTanaman);
                 cmd.Parameters.AddWithValue("@kondisi", Kondisi ?? string.Empty);
+                cmd.Parameters.AddWithValue("@hama", Hama ?? string.Empty);
+                cmd.Parameters.AddWithValue("@cuaca", Cuaca ?? string.Empty);
                 cmd.Parameters.AddWithValue("@catatan", Catatan ?? string.Empty);
                 cmd.Parameters.AddWithValue("@id_user", IdUser);
                 db.ExecuteNonQuery(cmd);
@@ -42,14 +45,16 @@ namespace WinFormsApp2.Models
 
         public void UpdateMonitoring()
         {
-            // UPDATE dengan kolom catatan
-            string query = "UPDATE monitoring SET tanggal = @tanggal, id_tanaman = @id_tanaman, kondisi_tanaman = @kondisi, catatan = @catatan, id_user = @id_user WHERE id_monitoring = @id";
+            // UPDATE dengan kolom catatan dan hama
+            string query = "UPDATE monitoring SET tanggal = @tanggal, id_tanaman = @id_tanaman, kondisi_tanaman = @kondisi, hama = @hama, cuaca = @cuaca, catatan = @catatan, id_user = @id_user WHERE id_monitoring = @id";
             using (NpgsqlCommand cmd = new NpgsqlCommand(query))
             {
                 cmd.Parameters.AddWithValue("@id", IdMonitoring);
                 cmd.Parameters.AddWithValue("@tanggal", Tanggal);
                 cmd.Parameters.AddWithValue("@id_tanaman", IdTanaman);
                 cmd.Parameters.AddWithValue("@kondisi", Kondisi ?? string.Empty);
+                cmd.Parameters.AddWithValue("@hama", Hama ?? string.Empty);
+                cmd.Parameters.AddWithValue("@cuaca", Cuaca ?? string.Empty);
                 cmd.Parameters.AddWithValue("@catatan", Catatan ?? string.Empty);
                 cmd.Parameters.AddWithValue("@id_user", IdUser);
                 db.ExecuteNonQuery(cmd);

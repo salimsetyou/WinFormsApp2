@@ -34,6 +34,7 @@ namespace WinFormsApp2.View
         public void ResetForm()
         {
             txtIdPetugas.Clear();
+            txtIdPetugas.ReadOnly = false;
             txtNama.Clear();
             txtUsername.Clear();
             txtPassword.Clear();
@@ -49,6 +50,7 @@ namespace WinFormsApp2.View
                 DataGridViewRow row = dgvDataPetugas.Rows[e.RowIndex];
 
                 txtIdPetugas.Text = row.Cells["ID"].Value.ToString();
+                txtIdPetugas.ReadOnly = false;
                 txtUsername.Text = row.Cells["Username"].Value.ToString();
                 txtPassword.Text = row.Cells["Password"].Value.ToString();
                 txtNama.Text = row.Cells["Nama Petugas"].Value.ToString();

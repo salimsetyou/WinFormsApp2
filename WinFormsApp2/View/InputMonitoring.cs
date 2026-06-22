@@ -22,8 +22,67 @@ namespace WinFormsApp2.View
         private void InputMonitoring_Load(object sender, EventArgs e)
         {
             controller.TampilDataInput();
-            
+
             try { controller.LoadDropdowns(); } catch {  }
+
+            dataGridView1.CellClick += DataGridView1_CellClick;
+
+            // Set placeholder untuk ID Monitoring agar user tahu harus input manual
+            if (textBox1 != null)
+            {
+                textBox1.PlaceholderText = "ID Monitoring (wajib diisi)";
+            }
+        }
+
+        private void DataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+
+                // Populate ID
+                if (row.Cells.Contains(row.Cells["ID"]))
+                {
+                    string id = row.Cells["ID"].Value?.ToString() ?? "";
+                    if (textBox1 != null)
+                        textBox1.Text = id;
+                }
+
+                // Populate Tanaman
+                if (row.Cells.Contains(row.Cells["TANAMAN"]))
+                {
+                    string tanaman = row.Cells["TANAMAN"].Value?.ToString() ?? "";
+                    if (comboBoxTanaman != null)
+                        comboBoxTanaman.Text = tanaman;
+                }
+
+                // Populate Kondisi
+                if (row.Cells.Contains(row.Cells["KONDISI"]))
+                {
+                    string kondisi = row.Cells["KONDISI"].Value?.ToString() ?? "";
+                    if (comboBoxPetugas != null)
+                        comboBoxPetugas.Text = kondisi;
+                }
+
+                // Populate Hama
+                if (row.Cells.Contains(row.Cells["HAMA"]))
+                {
+                    string hama = row.Cells["HAMA"].Value?.ToString() ?? "";
+                    if (comboBox1 != null)
+                        comboBox1.Text = hama;
+                }
+
+                // Populate Cuaca
+                if (row.Cells.Contains(row.Cells["CUACA"]))
+                {
+                    string cuaca = row.Cells["CUACA"].Value?.ToString() ?? "";
+                    if (comboBox2 != null)
+                        comboBox2.Text = cuaca;
+                }
+
+                btnEdit.Enabled = true;
+                btnSave.Enabled = false;
+            }
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -33,13 +92,12 @@ namespace WinFormsApp2.View
 
         private void btnEdit_Click(object sender, EventArgs e)
         {
-            
-            MessageBox.Show("Edit feature belum diimplementasikan");
+            controller.EditFromInput();
         }
 
         private void btnReset_Click(object sender, EventArgs e)
         {
-         
+
             textBox1?.Clear();
             textBox2?.Clear();
             comboBoxTanaman?.SelectedIndex = -1;
@@ -53,6 +111,11 @@ namespace WinFormsApp2.View
         private void comboBoxPetugas_SelectedIndexChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void Button1_Click(object sender, EventArgs e)
+        {
+            controller.HapusFromInput();
         }
     }
 }

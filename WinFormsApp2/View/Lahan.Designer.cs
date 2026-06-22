@@ -170,5 +170,6 @@
         public DataGridView dgvLahan;
         public Button btnHapus;
         public Button btnEdit;
+        public Button btnReset;
     }
 }

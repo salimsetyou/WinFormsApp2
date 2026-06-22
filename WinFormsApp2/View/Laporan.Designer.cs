@@ -30,76 +30,81 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Laporan));
             txtPetugas = new TextBox();
-            cmbJenis = new ComboBox();
             btnTampilkanLaporan = new Button();
             dgvLaporan = new DataGridView();
             dateTimePicker1 = new DateTimePicker();
+            btnHapus = new Button();
+            btnRefresh = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvLaporan).BeginInit();
             SuspendLayout();
             // 
-            // txtPetugasandjiawndijbwjdbajdbwj
+            // txtPetugas
             // 
-            txtPetugas.Location = new Point(72, 94);
-            txtPetugas.Margin = new Padding(5, 5, 5, 5);
+            txtPetugas.Location = new Point(44, 74);
             txtPetugas.Name = "txtPetugas";
             txtPetugas.PlaceholderText = "Nama Petugas";
-            txtPetugas.Size = new Size(201, 39);
+            txtPetugas.Size = new Size(125, 27);
             txtPetugas.TabIndex = 2;
-            // 
-            // cmbJenis
-            // 
-            cmbJenis.FormattingEnabled = true;
-            cmbJenis.Items.AddRange(new object[] { "Kopi", "Kakao" });
-            cmbJenis.Location = new Point(72, 179);
-            cmbJenis.Margin = new Padding(5, 5, 5, 5);
-            cmbJenis.Name = "cmbJenis";
-            cmbJenis.Size = new Size(201, 40);
-            cmbJenis.TabIndex = 4;
-            cmbJenis.Text = "Jenis Tanaman";
             // 
             // btnTampilkanLaporan
             // 
-            btnTampilkanLaporan.Location = new Point(177, 251);
-            btnTampilkanLaporan.Margin = new Padding(5, 5, 5, 5);
+            btnTampilkanLaporan.Location = new Point(225, 134);
             btnTampilkanLaporan.Name = "btnTampilkanLaporan";
-            btnTampilkanLaporan.Size = new Size(292, 46);
+            btnTampilkanLaporan.Size = new Size(180, 29);
             btnTampilkanLaporan.TabIndex = 5;
             btnTampilkanLaporan.Text = "TAMPILKAN  LAPORAN";
             btnTampilkanLaporan.UseVisualStyleBackColor = true;
             // 
-            // 
             // dgvLaporan
             // 
             dgvLaporan.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvLaporan.Location = new Point(72, 338);
-            dgvLaporan.Margin = new Padding(5, 5, 5, 5);
+            dgvLaporan.Location = new Point(44, 182);
             dgvLaporan.Name = "dgvLaporan";
             dgvLaporan.RowHeadersWidth = 51;
-            dgvLaporan.Size = new Size(847, 349);
+            dgvLaporan.Size = new Size(521, 247);
             dgvLaporan.TabIndex = 7;
             // 
             // dateTimePicker1
             // 
-            dateTimePicker1.Location = new Point(411, 179);
-            dateTimePicker1.Margin = new Padding(5, 5, 5, 5);
+            dateTimePicker1.Location = new Point(238, 72);
             dateTimePicker1.Name = "dateTimePicker1";
-            dateTimePicker1.Size = new Size(404, 39);
+            dateTimePicker1.Size = new Size(250, 27);
             dateTimePicker1.TabIndex = 9;
+            // 
+            // btnHapus
+            // 
+            btnHapus.Location = new Point(38, 130);
+            btnHapus.Name = "btnHapus";
+            btnHapus.Size = new Size(79, 26);
+            btnHapus.TabIndex = 10;
+            btnHapus.Text = "HAPUS";
+            btnHapus.UseVisualStyleBackColor = true;
+            btnHapus.Click += BtnHapus_Click;
+            // 
+            // btnRefresh
+            // 
+            btnRefresh.Location = new Point(123, 127);
+            btnRefresh.Name = "btnRefresh";
+            btnRefresh.Size = new Size(83, 33);
+            btnRefresh.TabIndex = 11;
+            btnRefresh.Text = "REFRESH";
+            btnRefresh.UseVisualStyleBackColor = true;
+            btnRefresh.Click += BtnRefresh_Click;
             // 
             // Laporan
             // 
-            AutoScaleDimensions = new SizeF(13F, 32F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackgroundImage = (Image)resources.GetObject("$this.BackgroundImage");
             BackgroundImageLayout = ImageLayout.Stretch;
-            ClientSize = new Size(1027, 720);
+            ClientSize = new Size(632, 450);
+            Controls.Add(btnRefresh);
+            Controls.Add(btnHapus);
             Controls.Add(dateTimePicker1);
             Controls.Add(dgvLaporan);
             Controls.Add(btnTampilkanLaporan);
-            Controls.Add(cmbJenis);
             Controls.Add(txtPetugas);
             DoubleBuffered = true;
-            Margin = new Padding(5, 5, 5, 5);
             Name = "Laporan";
             Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)dgvLaporan).EndInit();
@@ -110,12 +115,13 @@
         #endregion
 
         private TextBox txtPetugas;
-        private ComboBox cmbJenis;
         private Button button1;
         private Button button2;
         private Button btnTampilkanLaporan;
         public DataGridView dgvLaporan;
         private DateTimePicker periodeawal;
         private DateTimePicker dateTimePicker1;
+        private Button btnHapus;
+        private Button btnRefresh;
     }
 }

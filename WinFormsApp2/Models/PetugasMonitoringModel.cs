@@ -7,6 +7,7 @@ namespace MonitoringKopiKakao.Model
     public class PetugasModel
     {
         public int IdUser { get; set; }
+        public int IdUserLama { get; set; }  // Menyimpan ID lama untuk Update
         public string Username { get; set; }
         public string Password { get; set; }
         public string NamaPetugas { get; set; }
@@ -47,26 +48,91 @@ namespace MonitoringKopiKakao.Model
                 }
             }
         }
-
+          
         public void UpdatePetugas()
         {
-            string queryUser = "UPDATE users SET username = @user, password = @pass WHERE id_user = @id";
-            string queryPetugas = "UPDATE petugas_monitoring SET nama = @nama WHERE id_user = @id";
-
-            using (NpgsqlConnection conn = db.GetConnection())
+            // Jika ID berubah, perlu update 3 tabel yang saling referensi
+            if (IdUserLama > 0 && IdUserLama != IdUser)
             {
-                using (NpgsqlCommand cmdUser = new NpgsqlCommand(queryUser, conn))
+                // PENTING: Urutan update untuk cascade update
+                // 1. Update tabel monitoring (child yang referensi users)
+                // 2. Update tabel petugas_monitoring (child yang referensi users)
+                // 3. Update tabel users (parent)
+
+                using (NpgsqlConnection conn = db.GetConnection())
                 {
-                    cmdUser.Parameters.AddWithValue("@id", IdUser);
-                    cmdUser.Parameters.AddWithValue("@user", Username);
-                    cmdUser.Parameters.AddWithValue("@pass", Password);
-                    cmdUser.ExecuteNonQuery();
+                    using (NpgsqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Disable foreign key check sementara untuk semua
+                            using (NpgsqlCommand disableFk = new NpgsqlCommand("SET CONSTRAINTS ALL DEFERRED", conn, transaction))
+                            {
+                                disableFk.ExecuteNonQuery();
+                            }
+
+                            // Step 1: Update tabel monitoring DULU (child level 1)
+                            string queryMonitoring = "UPDATE monitoring SET id_user = @id_new WHERE id_user = @id_old";
+                            using (NpgsqlCommand cmdMonitoring = new NpgsqlCommand(queryMonitoring, conn, transaction))
+                            {
+                                cmdMonitoring.Parameters.AddWithValue("@id_new", IdUser);
+                                cmdMonitoring.Parameters.AddWithValue("@id_old", IdUserLama);
+                                cmdMonitoring.ExecuteNonQuery();
+                            }
+
+                            // Step 2: Update tabel petugas_monitoring (child level 1)
+                            string queryPetugas = "UPDATE petugas_monitoring SET id_user = @id_new WHERE id_user = @id_old";
+                            using (NpgsqlCommand cmdPetugas = new NpgsqlCommand(queryPetugas, conn, transaction))
+                            {
+                                cmdPetugas.Parameters.AddWithValue("@id_new", IdUser);
+                                cmdPetugas.Parameters.AddWithValue("@id_old", IdUserLama);
+                                cmdPetugas.ExecuteNonQuery();
+                            }
+
+                            // Step 3: Baru update tabel users setelah kedua child table sudah ter-update
+                            string queryUser = "UPDATE users SET id_user = @id_new, username = @user, password = @pass WHERE id_user = @id_old";
+                            using (NpgsqlCommand cmdUser = new NpgsqlCommand(queryUser, conn, transaction))
+                            {
+                                cmdUser.Parameters.AddWithValue("@id_new", IdUser);
+                                cmdUser.Parameters.AddWithValue("@id_old", IdUserLama);
+                                cmdUser.Parameters.AddWithValue("@user", Username);
+                                cmdUser.Parameters.AddWithValue("@pass", Password);
+                                cmdUser.ExecuteNonQuery();
+                            }
+
+                            // Commit transaction jika semua berhasil
+                            transaction.Commit();
+                        }
+                        catch (Exception ex)
+                        {
+                            // Rollback jika ada error
+                            transaction.Rollback();
+                            throw new Exception("Gagal mengubah ID petugas: " + ex.Message);
+                        }
+                    }
                 }
-                using (NpgsqlCommand cmdPetugas = new NpgsqlCommand(queryPetugas, conn))
+            }
+            else
+            {
+                // Update tanpa perubahan ID
+                string queryUser = "UPDATE users SET username = @user, password = @pass WHERE id_user = @id";
+                string queryPetugas = "UPDATE petugas_monitoring SET nama = @nama WHERE id_user = @id";
+
+                using (NpgsqlConnection conn = db.GetConnection())
                 {
-                    cmdPetugas.Parameters.AddWithValue("@id", IdUser);
-                    cmdPetugas.Parameters.AddWithValue("@nama", NamaPetugas);
-                    cmdPetugas.ExecuteNonQuery();
+                    using (NpgsqlCommand cmdUser = new NpgsqlCommand(queryUser, conn))
+                    {
+                        cmdUser.Parameters.AddWithValue("@id", IdUser);
+                        cmdUser.Parameters.AddWithValue("@user", Username);
+                        cmdUser.Parameters.AddWithValue("@pass", Password);
+                        cmdUser.ExecuteNonQuery();
+                    }
+                    using (NpgsqlCommand cmdPetugas = new NpgsqlCommand(queryPetugas, conn))
+                    {
+                        cmdPetugas.Parameters.AddWithValue("@id", IdUser);
+                        cmdPetugas.Parameters.AddWithValue("@nama", NamaPetugas);
+                        cmdPetugas.ExecuteNonQuery();
+                    }
                 }
             }
         }

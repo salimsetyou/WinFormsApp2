@@ -124,6 +124,22 @@ namespace WinFormsApp2.UserController
                 // Mapping yang sesuai dengan kontrol di form InputMonitoring
                 model.Tanggal = viewInput.dateTimePicker1?.Value ?? DateTime.Now;
 
+                // Ambil ID Monitoring dari textBox1 (WAJIB DIISI)
+                model.IdMonitoring = 0;
+                if (string.IsNullOrWhiteSpace(viewInput.textBox1?.Text))
+                {
+                    MessageBox.Show("ID Monitoring harus diisi! Silakan input ID monitoring secara manual.", "Validasi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (!int.TryParse(viewInput.textBox1.Text.Trim(), out int idMonitoring) || idMonitoring <= 0)
+                {
+                    MessageBox.Show("ID Monitoring harus berupa angka positif!", "Validasi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                model.IdMonitoring = idMonitoring;
+
                 // Ambil id tanaman dari comboBoxTanaman dengan beberapa pendekatan aman
                 model.IdTanaman = 0;
                 try
@@ -162,12 +178,19 @@ namespace WinFormsApp2.UserController
                     model.IdTanaman = 0;
                 }
 
+                // Ambil Kondisi dari comboBoxPetugas (sebelumnya gunakan ini)
                 model.Kondisi = viewInput.comboBoxPetugas?.Text ?? string.Empty;
 
-              
+                // Ambil Hama dari comboBox1
+                model.Hama = viewInput.comboBox1?.Text ?? string.Empty;
+
+                // Ambil Cuaca dari comboBox2
+                model.Cuaca = viewInput.comboBox2?.Text ?? string.Empty;
+
+                // Ambil Catatan dari textBox2
                 model.Catatan = viewInput.textBox2?.Text ?? string.Empty;
 
-                
+
                 if (WinFormsApp2.Session.IdUser > 0)
                     model.IdUser = WinFormsApp2.Session.IdUser;
                 else if (viewInput.comboBoxPetugas != null && viewInput.comboBoxPetugas.SelectedValue != null && int.TryParse(viewInput.comboBoxPetugas.SelectedValue.ToString(), out var idu))
@@ -175,7 +198,7 @@ namespace WinFormsApp2.UserController
                 else
                     model.IdUser = 0;
 
-               
+
                 if (model.IdTanaman <= 0)
                 {
                     MessageBox.Show("Pilih tanaman yang valid sebelum menyimpan.", "Validasi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -189,8 +212,14 @@ namespace WinFormsApp2.UserController
                 }
 
                 model.InsertMonitoring();
-                MessageBox.Show("Data monitoring berhasil disimpan!");
+                MessageBox.Show("Data monitoring berhasil disimpan dengan ID: " + model.IdMonitoring);
                 TampilDataInput();
+                viewInput.textBox1?.Clear();
+                viewInput.textBox2?.Clear();
+                viewInput.comboBoxTanaman?.SelectedIndex = -1;
+                viewInput.comboBoxPetugas?.SelectedIndex = -1;
+                viewInput.comboBox1?.SelectedIndex = -1;
+                viewInput.comboBox2?.SelectedIndex = -1;
             }
             catch (Exception ex)
             {
@@ -216,6 +245,136 @@ namespace WinFormsApp2.UserController
             catch (Exception ex)
             {
                 MessageBox.Show("Gagal menghapus monitoring: " + ex.Message);
+            }
+        }
+
+        public void EditFromInput()
+        {
+            try
+            {
+                if (viewInput.dataGridView1.CurrentRow == null) return;
+
+                var val = viewInput.dataGridView1.CurrentRow.Cells["ID"].Value;
+                if (val == null) return;
+                int id = Convert.ToInt32(val);
+
+                model.IdMonitoring = id;
+                model.Tanggal = viewInput.dateTimePicker1?.Value ?? DateTime.Now;
+
+                model.IdTanaman = 0;
+                try
+                {
+                    if (viewInput.comboBoxTanaman != null)
+                    {
+                        var sel = viewInput.comboBoxTanaman.SelectedValue;
+                        if (sel != null && sel != DBNull.Value)
+                        {
+                            model.IdTanaman = Convert.ToInt32(sel);
+                        }
+                        else if (viewInput.comboBoxTanaman.SelectedItem is DataRowView drv)
+                        {
+                            model.IdTanaman = Convert.ToInt32(drv["id_tanaman"]);
+                        }
+                        else if (!string.IsNullOrWhiteSpace(viewInput.comboBoxTanaman.Text))
+                        {
+                            var dtLookup = model.GetTanamanList();
+                            if (dtLookup != null)
+                            {
+                                foreach (DataRow r in dtLookup.Rows)
+                                {
+                                    if (string.Equals(r["nama_tanaman"]?.ToString(), viewInput.comboBoxTanaman.Text, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        model.IdTanaman = Convert.ToInt32(r["id_tanaman"]);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    model.IdTanaman = 0;
+                }
+
+                model.Kondisi = viewInput.comboBoxPetugas?.Text ?? string.Empty;
+                model.Hama = viewInput.comboBox1?.Text ?? string.Empty;
+                model.Cuaca = viewInput.comboBox2?.Text ?? string.Empty;
+                model.Catatan = viewInput.textBox2?.Text ?? string.Empty;
+
+                if (WinFormsApp2.Session.IdUser > 0)
+                    model.IdUser = WinFormsApp2.Session.IdUser;
+                else if (viewInput.comboBoxPetugas != null && viewInput.comboBoxPetugas.SelectedValue != null && int.TryParse(viewInput.comboBoxPetugas.SelectedValue.ToString(), out var idu))
+                    model.IdUser = idu;
+                else
+                    model.IdUser = 0;
+
+                if (model.IdTanaman <= 0)
+                {
+                    MessageBox.Show("Pilih tanaman yang valid sebelum mengubah.", "Validasi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                model.UpdateMonitoring();
+                MessageBox.Show("Data monitoring berhasil diperbarui!");
+                TampilDataInput();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal mengubah monitoring: " + ex.Message);
+            }
+        }
+
+        public void HapusFromInput()
+        {
+            try
+            {
+                if (viewInput.dataGridView1.CurrentRow == null) return;
+                var val = viewInput.dataGridView1.CurrentRow.Cells["ID"].Value;
+                if (val == null) return;
+                int id = Convert.ToInt32(val);
+                if (MessageBox.Show("Hapus monitoring terpilih?", "Konfirmasi", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    model.DeleteMonitoring(id);
+                    MessageBox.Show("Data monitoring berhasil dihapus!");
+                    TampilDataInput();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal menghapus monitoring: " + ex.Message);
+            }
+        }
+
+        public void FilterRiwayat(string namaTanaman, DateTime? tanggal)
+        {
+            try
+            {
+                var dt = model.GetAllMonitoring();
+                if (dt == null) dt = new DataTable();
+
+                DataView dv = new DataView(dt);
+                string filter = "";
+
+                if (!string.IsNullOrWhiteSpace(namaTanaman))
+                {
+                    filter += $"TANAMAN LIKE '%" + namaTanaman.Replace("'", "''") + "%'";
+                }
+
+                if (tanggal.HasValue)
+                {
+                    if (!string.IsNullOrEmpty(filter)) filter += " AND ";
+                    filter += $"CONVERT(varchar, TANGGAL, 23) = '" + tanggal.Value.ToString("yyyy-MM-dd") + "'";
+                }
+
+                if (!string.IsNullOrEmpty(filter))
+                    dv.RowFilter = filter;
+
+                viewRiwayat.dataGridView1.DataSource = dv;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal memfilter riwayat: " + ex.Message);
             }
         }
     }
